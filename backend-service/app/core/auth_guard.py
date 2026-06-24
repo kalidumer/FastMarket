@@ -37,9 +37,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSe
     
     
     class RoleChecker:
+        #let's intialise the class with constructor and with a list of of str (role) 
         def __init__(self,allowed_roles:list[str]):
             self.allowed_roles=allowed_roles
-        
+       
         def __call__(self, current_user: User = Depends(get_current_user)):
             
             if current_user.role not in self.allowed_roles:

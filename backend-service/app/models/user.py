@@ -16,6 +16,11 @@ class UserBase(SQLModel):
     role: UserRole = Field(default=UserRole.CUSTOMER, nullable=False)
     is_active: bool = Field(default=True, nullable=False)
     
+class User(UserBase,table=True):
+    
+    id:Optional[int]=Field(primary_key=True,nullable=False)
+    hash_password:str=Field(nullable=False)
+    
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
