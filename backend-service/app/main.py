@@ -12,8 +12,14 @@ from app.models.ticket import TicketCreate, Ticket
 # 🟢 FIXED IMPORT: Mapping accurately to your AI worker path
 from app.services.ai_agent import ai_based_ticket
 
+#for Router
+
+from app.routers.auth_user import router as auth_user_router
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("API_BOOT")
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,6 +47,10 @@ app.add_middleware(
 )
 
 # ==================== APIS ENDPOINTS ====================
+
+#================in the future all endpoint will add like this================================
+app.include_router(auth_user_router)
+
 
 # Note: Changed pathing slightly to match your explicit design
 @app.post("/api/create_ticket", status_code=status.HTTP_201_CREATED)
