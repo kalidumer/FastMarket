@@ -16,6 +16,7 @@ from app.services.ai_agent import ai_based_ticket
 
 from app.routers.auth_user import router as auth_user_router
 from app.routers.ai_support import router as ai_support_router
+from app.routers.product import router as product_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("API_BOOT")
@@ -52,3 +53,4 @@ app.add_middleware(
 #================in the future all endpoint will add like this================================
 app.include_router(auth_user_router)
 app.include_router(ai_support_router)
+app.include_router(product_router)
