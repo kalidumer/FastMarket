@@ -28,6 +28,9 @@ class Order(SQLModel,table=True):
     user_id:int=Field(foreign_key="user.id",index=True)
     total_price:float=Field(default=0.0)
     created_at:datetime=Field(default_factory=datetime.utcnow)
+    txt_ref:Optional[str]=Field(default=None,unique=True,index=True)
+    status:OrderStatus=Field(default=OrderStatus.PENDING)
+    
     order_items:Optional[OrderItem]=Relationship(back_populates="order")
     
 #========== ORDER SCHEMA TO HISTORY PURPOSE BY SAVING ORDERS IN ORDERITEM==============
