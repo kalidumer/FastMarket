@@ -12,11 +12,11 @@ from app.models.user import UserRole,User
 
 STAFF_ROLE=RoleChecker([UserRole.ADMIN,UserRole.MANAGER])
 
-router=APIRouter(prefix="/api/catelog",tags=["E-commerce catelog engine"])
+router=APIRouter(prefix="/api/products",tags=["E-commerce Product Management"])
 
 #GET ALL PRODUCTS
 
-@router.get("/products",response_model=List[Product])
+@router.get("/",response_model=List[Product])
 async def get_all_product(session:AsyncSession=Depends(get_session)):
     stmt=select(Product).order_by(Product.created_at.desc())
     result=await session.execute(stmt)
@@ -29,7 +29,7 @@ async def get_all_product(session:AsyncSession=Depends(get_session)):
     
 #GET ONE PRODUCT
 
-@router.get("/products/{product_id}",response_model=Product)
+@router.get("/{product_id}",response_model=Product)
 async def get_one_product(productId:int,
                           session:AsyncSession=Depends(get_session)):
 
@@ -44,28 +44,36 @@ async def get_one_product(productId:int,
 
 #TO CREATE NEW PRODUCT
 
-@router.post("/products",response_model=Product,status_code=status.HTTP_201_CREATED)
-async def create_new_product(payload:ProductCreate,
-                         session:AsyncSession=Depends(get_session),
-                         current_staff:User=Depends(STAFF_ROLE)):
+@router.post("/", response_model=Product, status_code=status.HTTP_201_CREATED)
+async def create_new_product(
+    payload: ProductCreate,
+    session: AsyncSession = Depends(get_session),
+    current_staff: User = Depends(STAFF_ROLE)
+):
+    # Check if the specified category exists
+    stmt = select(Category).where(Category.id == payload.category)
     
-#check if already created on some category first
+
+    result = await session.execute(stmt)
+    existed_category = result.scalar_one_or_none()
     
-    stmt=select(Category).where(Category.id==payload.category_id)
-    existedCategory=await session.excute(stmt)
+    if not existed_category:
+        raise HTTPException(
+            status_code=400, 
+            detail="There is no wanted category to add the new product"
+        )
     
-    if not existedCategory.scalar_one_or_none():
-        raise HTTPException(status=400,detail="There is no wanted category to add the new product")
-    
-    new_product=Product.model_validate(payload)
+    new_product = Product.model_validate(payload)
     session.add(new_product)
+    
     await session.commit()
     await session.refresh(new_product)
+    
     return new_product
 
 # TO UPDATE THE PRODUCT INFORMATIONS
 
-@router.put("/products/{productId}",response_model=Product)
+@router.put("/{productId}",response_model=Product)
 async def update_product(product_id:int,
                         payload:ProductUpdate,
                         session:AsyncSession=Depends(get_session),
@@ -90,7 +98,7 @@ async def update_product(product_id:int,
 
 #DELETE PRODUCT
 
-@router.put("/products/{productId}",response_model=Product)
+@router.put("/{productId}",response_model=Product)
 async def delete_product(product_id:int,
                         session:AsyncSession=Depends(get_session),
                         current_staff:User=Depends(STAFF_ROLE)
@@ -110,7 +118,6 @@ async def delete_product(product_id:int,
 
 @router.get("/categories", response_model=List[Category])
 async def list_all_categories(session: AsyncSession = Depends(get_session)):
-    """Public endpoint to fetch all product categories for navigation menus."""
     stmt = select(Category).order_by(Category.name)
     result = await session.execute(stmt)
     return result.scalars().all()
