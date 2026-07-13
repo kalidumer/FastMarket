@@ -1,36 +1,42 @@
-import httpx   
-import uuid
-import os 
-from fastapi import HTTPException, status
-
-
-CHAPA_API_URL = "https://api.chapa.co/v1/transaction/initialize"
-
-CHAPA_SECRET_KEY = os.getenv("CHAPA_SECRET_KEY")
+import httpx
+import os
 
 class ChapaPaymentService:
-    @staticmethod
-    async def initialize_chapa_payment(order_id: str, amount: float, currency: str, email: str, full_name: str) -> dict:
+    @classmethod
+    async def initialize_chapa_payment(cls, order_id: str, amount: float, currency: str, email: str, full_name: str):
+        chapa_url = "https://api.chapa.co/v1/transaction/initialize"
+        secret_key = os.getenv("CHAPA_SECRET_KEY")
         
-        tx_ref = f"fastmarket-{order_id}-{uuid.uuid4()}"
+        headers = {
+            "Authorization": f"Bearer {secret_key}",
+            "Content-Type": "application/json"
+        }
         
-        names = full_name.split(" ")
-        first_name = names[0] if names else "Customer"
-        last_name = names[-1] if len(names) > 1 else "User"
-        
-    
-        BASE_URL = "http://127.0.0.1:8007" 
-        FRONTEND_URL = "http://localhost:3000"
-        
+        # Build the exact dictionary structure Chapa expects
         payload = {
             "amount": str(amount),
             "currency": currency,
             "email": email,
-            "first_name": first_name,
-            "last_name": last_name,
-            "tx_ref": tx_ref,
-            "callback_url": f"{BASE_URL}/api/order/payment/webhook",
-            "return_url": f"{FRONTEND_URL}/checkout/success?tx_ref={tx_ref}", # 👈 Point to your frontend success page
-            "customization[title]": "FastMarket Checkout",
-            "customization[description]": f"Payment for Order #{order_id}"
+            "first_name": full_name.split()[0] if full_name else "Customer",
+            "last_name": full_name.split()[1] if len(full_name.split()) > 1 else "Market",
+            "tx_ref": f"fastmarket-tx-{order_id}", # Or pass the unique_tx_ref directly
+            "callback_url": "http://localhost:8007/docs#/Order%20Management%20Related/chapa_payment_webhook_api_order_payment_webhook_post", # Your webhook callback url
         }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(chapa_url, json=payload, headers=headers)
+            
+            if response.status_code != 200:
+                raise Exception(f"Chapa API responded with status {response.status_code}: {response.text}")
+                
+            res_json = response.json()
+            
+            # Chapa returns data inside a 'data' object. We must unpack it safely.
+            data = res_json.get("data")
+            if not data or "checkout_url" not in data:
+                raise Exception("Malformed response structure from Chapa API.")
+                
+            return {
+                "checkout_url": data.get("checkout_url"),
+                "tx_ref": payload["tx_ref"]
+            }
