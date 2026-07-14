@@ -14,6 +14,7 @@ class PaymentStatus(str, Enum):
     SUCCESSFUL = "SUCCESSFUL"
     FAILED = "FAILED"
 
+
 class CartBase(SQLModel):
     product_id: int = Field(foreign_key="product.id")
     quantity: int = Field(default=1)
@@ -30,6 +31,7 @@ class OrderItem(SQLModel, table=True):
     quantity: int
     price_at_purchase: float
     
+    # Changed back_populates to point specifically to order_items
     order: Optional["Order"] = Relationship(back_populates="order_items")
 
 class Payment(SQLModel, table=True):
@@ -43,6 +45,7 @@ class Payment(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
+    # Changed back_populates to point specifically to payments
     order: Optional["Order"] = Relationship(back_populates="payments")
 
 class Order(SQLModel, table=True):

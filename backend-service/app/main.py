@@ -15,7 +15,7 @@ from app.services.ai_agent import ai_based_ticket
 from app.routers.auth_user import router as auth_user_router
 from app.routers.ai_support import router as ai_support_router
 from app.routers.product import router as product_router
-from app.routers.order import router as order_ai_router
+from app.routers.orderRoute import router as order_ai_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -136,7 +136,8 @@ async def checkout_cart(
             amount=running_total,
             currency="ETB",
             email=current_user.email,
-            full_name=current_user.full_name if current_user.full_name else "Market Customer"
+            full_name=current_user.full_name if current_user.full_name else "Market Customer",
+            tx_ref=unique_tx_ref  
         )
         
         if not payment_session or "checkout_url" not in payment_session:
@@ -244,7 +245,89 @@ async def chapa_payment_webhook(request: Request, session: AsyncSession = Depend
 
 
 # ==========================================
-# 4. DYNAMIC AI RECOMMENDATIONS
+# 4. MANUAL CHECKOUT STATUS VERIFICATION
+# ==========================================
+@router.get("/verify/{tx_ref}")
+async def verify_checkout_payment(
+    tx_ref: str,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(Order).where(Order.txt_ref == tx_ref, Order.user_id == current_user.id)
+    res = await session.execute(stmt)
+    order = res.scalar_one_or_none()
+
+    pay_stmt = select(Payment).where(Payment.txt_ref == tx_ref)
+    pay_res = await session.execute(pay_stmt)
+    payment_record = pay_res.scalar_one_or_none()
+
+    if not order or not payment_record:
+        raise HTTPException(status_code=404, detail="Transaction reference not found.")
+
+    if order.status == OrderStatus.PAID:
+        return {"status": "paid", "message": "Order has already been processed and marked as PAID."}
+
+    try:
+        verification_data = await PaymentService.verify_chapa_payment(tx_ref)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Error communicating with Chapa verification endpoint: {str(e)}"
+        )
+
+    chapa_status = verification_data.get("data", {}).get("status")
+
+    if verification_data.get("status") == "success" and chapa_status == "success":
+        order.status = OrderStatus.PAID
+        
+        payment_record.status = PaymentStatus.SUCCESSFUL
+        payment_record.chapa_id = verification_data["data"].get("reference")
+        payment_record.method = verification_data["data"].get("payment_method")
+        payment_record.updated_at = datetime.utcnow()
+
+        session.add(order)
+        session.add(payment_record)
+        await session.commit()
+
+        return {
+            "status": "paid",
+            "message": "Payment verified successfully! Order closed.",
+            "amount": verification_data["data"].get("amount")
+        }
+
+    elif chapa_status == "failed":
+        order.status = OrderStatus.CANCELLED
+        payment_record.status = PaymentStatus.FAILED
+        payment_record.updated_at = datetime.utcnow()
+
+        session.add(order)
+        session.add(payment_record)
+
+        items_stmt = select(OrderItem).where(OrderItem.order_id == order.id)
+        items_res = await session.execute(items_stmt)
+        ordered_items = items_res.scalars().all()
+
+        if ordered_items:
+            product_ids = [item.product_id for item in ordered_items]
+            prod_stmt = select(Product).where(Product.id.in_(product_ids))
+            prod_res = await session.execute(prod_stmt)
+            products_map = {p.id: p for p in prod_res.scalars().all()}
+
+            for item in ordered_items:
+                product = products_map.get(item.product_id)
+                if product:
+                    product.inventory_count += item.quantity
+                    session.add(product)
+
+        await session.commit()
+        return {"status": "failed", "message": "Payment was declared failed by Chapa. Stock returned."}
+
+    else:
+        return {"status": "pending", "message": "Payment is still awaiting completion."}
+
+
+# ==========================================
+# 5. DYNAMIC AI RECOMMENDATIONS
 # ==========================================
 @router.get("/ai-recommendations", response_model=List[Product])
 async def dynamic_ai_upsell(
