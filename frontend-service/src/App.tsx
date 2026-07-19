@@ -1,11 +1,12 @@
 import { useState,useEffect } from "react"
-import TicketForm from "./components/TicketForm"
-import TicketQueue from "./components/TicketQueue"
+import TicketForm from "@/components/TicketForm"
+import TicketQueue from "@/components/TicketQueue"
 
 import { TicketCreatePayload ,GetTicketsResponse, Ticket} from "@/types";
 import Header from "./components/Header";
+import Login from "./pages/loginpage";
 
-function App() {
+export default function App() {
   
   const [tickets,setTicket]=useState<Ticket[]>([])
   const [error,setError]=useState<string | null>(null)
@@ -74,16 +75,13 @@ function App() {
 
       {/* CORE FRAME GRID SYSTEM */}
       <main className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-        {/* 2. Form component running on native form action lifecycles */}
-        <TicketForm onSubmitTicket={createNewTicket} error={error} />
+        {/* <TicketForm onSubmitTicket={createNewTicket} error={error} /> */}
 
-        {/* 3. Live real-time dashboard queue component mapping over synchronized types */}
-        <TicketQueue tickets={tickets} />
+        {/* <TicketQueue tickets={tickets} /> */}
+        <Login/>
       </main>
     </div>
     </>
   )
 }
 
-
-export default App
