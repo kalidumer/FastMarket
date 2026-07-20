@@ -1,5 +1,5 @@
 // Base API Gateway configuration route
-export const API_GATEWAY_URL = 'http://localhost:8000/api/v1';
+export const API_GATEWAY_URL = 'http://localhost:8007/api/';
 
 // Direct Microservice endpoints (if not routing through a gateway)
 export const AUTH_SERVICE_URL = 'http://localhost:8001';

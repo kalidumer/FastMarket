@@ -1,10 +1,11 @@
 import { useState,useEffect } from "react"
-import TicketForm from "@/components/TicketForm"
-import TicketQueue from "@/components/TicketQueue"
+import TicketForm from "./components/TicketForm"
+import TicketQueue from "./components/TicketQueue"
 
 import { TicketCreatePayload ,GetTicketsResponse, Ticket} from "@/types";
 import Header from "./components/Header";
 import Login from "./pages/loginpage";
+import { BrowserRouter,Routes,Route } from "react-router-dom";
 
 export default function App() {
   
@@ -29,7 +30,7 @@ export default function App() {
       //when fetch new data 
 
       useEffect(() => {
-  // 🟢 Self-executing wrapper isolating the async execution lifecycle
+
   (async () => {
     try {
       await fetchTickets();
@@ -71,15 +72,20 @@ export default function App() {
 
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans antialiased">
       {/* 1. Header component layer */}
-      <Header />
+      {/* <Header /> */}
 
       {/* CORE FRAME GRID SYSTEM */}
       <main className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-        {/* <TicketForm onSubmitTicket={createNewTicket} error={error} /> */}
-
-        {/* <TicketQueue tickets={tickets} /> */}
+        <TicketForm onSubmitTicket={createNewTicket} error={error} />
+        <TicketQueue tickets={tickets} />
+        
         <Login/>
       </main>
+      <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+      </Routes>
+      </BrowserRouter>
     </div>
     </>
   )

@@ -8,22 +8,18 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  // 🟢 Extract pure application slice state from the Redux state engine
   const { token, loading, error } = useAppSelector((state) => state.auth);
 
-  // Local state metrics for UI forms
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // 🟢 Structural Lifecycle Cleanup: Purges stale slice errors when migrating views
   useEffect(() => {
     return () => {
       dispatch(clearAuthError());
     };
   }, [dispatch]);
 
-  // 🟢 State Interceptor: Forwards the viewport to Home immediately upon receiving a valid token
   useEffect(() => {
     if (token) {
       navigate(ROUTES.HOME, { replace: true });
@@ -34,13 +30,11 @@ export default function LoginPage() {
     e.preventDefault();
     setValidationError(null);
 
-    // 1. Client-side edge assertion before sending payload streams
     if (!email.trim() || !password.trim()) {
       setValidationError('Please fill in all fields.');
       return;
     }
 
-    // 2. Dispatch data transaction out to the core async thunk wrapper
     dispatch(loginUser({ email, password }));
   };
 
