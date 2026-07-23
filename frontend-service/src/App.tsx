@@ -1,91 +1,19 @@
-import { useState,useEffect } from "react"
-import TicketForm from "./components/TicketForm"
-import TicketQueue from "./components/TicketQueue"
-
-import { TicketCreatePayload ,GetTicketsResponse, Ticket} from "@/types";
-import Header from "./components/Header";
 import Login from "./pages/loginpage";
-import { BrowserRouter,Routes,Route } from "react-router-dom";
+import {Routes,Route} from "react-router-dom"
 
 export default function App() {
   
-  const [tickets,setTicket]=useState<Ticket[]>([])
-  const [error,setError]=useState<string | null>(null)
-
-  const API_BASE_URL="http://127.0.0.1:8007/api"
-
-  const fetchTickets =async()=>{
-
-    try {
-      const response=await fetch("http://127.0.0.1:8007/api/get_tickets")
-      if(!response.ok) throw new Error("UNABLE TO FETCH THE DATA FROM BACKEND")
-
-      const data:GetTicketsResponse=await response.json()
-      setTicket(data.tickets)
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message:"UNKNOWN INTERFACE ERROR!")
-    }
-  }
-      //when fetch new data 
-
-      useEffect(() => {
-
-  (async () => {
-    try {
-      await fetchTickets();
-    } catch (err) {
-      console.error("IIFE execution catch:", err);
-    }
-  })();
-
-  const interval = setInterval(() => {
-    void fetchTickets();
-  }, 4000);
-
-  return () => clearInterval(interval);
-}, []);
-
-    // to integrate ticket registeration
-
-  const createNewTicket=async(payload:TicketCreatePayload)=>{
-  setError(null);
-
-  try {
-
-    const response=await fetch(`${API_BASE_URL}/create_ticket`,{
-      method:"POST",
-      headers:{"content-type": "application/json"},
-      body:JSON.stringify(payload)
-    })
-
-    if(!response.ok) throw new Error("unable to fetch to register!")
-      await fetchTickets()
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Unable to register the ticket!")
-    throw err
-  }
-
-  }
   return (
     <>
-
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans antialiased">
-      {/* 1. Header component layer */}
-      {/* <Header /> */}
-
-      {/* CORE FRAME GRID SYSTEM */}
       <main className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-        <TicketForm onSubmitTicket={createNewTicket} error={error} />
-        <TicketQueue tickets={tickets} />
+        {/* <TicketForm onSubmitTicket={createNewTicket} error={error} />
+        <TicketQueue tickets={tickets} /> */}
         
-        <Login/>
       </main>
-      <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
       </Routes>
-      </BrowserRouter>
     </div>
     </>
   )
