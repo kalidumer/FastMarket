@@ -48,7 +48,7 @@ export default function LoginPage() {
             Welcome Back
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your customer marketplace account
+            Sign in to your FastMarket account
           </p>
         </div>
 
