@@ -1,7 +1,9 @@
 import {useEffect, useState} from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector} from "../store/store";
 import { registerUser, clearAuthError,loginUser } from "../features/auth/authSlice";
+import Input from "../components/input";
+import Button from "../components/button";
 export default function Signup(){
 
     const dispatch = useAppDispatch();
@@ -26,7 +28,7 @@ export default function Signup(){
         }},[token,navigate])
 
 
-    const handleSunmit=async(e:React.FormEvent)=>{
+    const handleSubmit=async(e:React.FormEvent)=>{
         e.preventDefault();
         setValidationError(null);
 
@@ -54,6 +56,51 @@ export default function Signup(){
     }
 
     return(<>
-    <div className="flex bg-red-500 min-h-10"></div>
+    <div className="flex bg-white min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md space-y-8 rounded-xl bg-white shadow-md border border-gray-100 p-4">
+            <div className="text-center">
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Create Account</h2>
+                <p className="mt-2 text-sm text-gray-600">Join the platform to order products</p>
+            </div>
+            {(validationError || error) &&(
+            <div className="rounded-md border border-red-600 bg-red-50 p-4 text-sm text-red-600 transition-all">
+<p className="font-medium">{validationError || error}</p>
+            </div>)}
+
+            <form onSubmit={handleSubmit} className="space-y-4 mt-8 mx-4">
+                <Input 
+                placeholder="enter your Full Name"
+                type="text"
+                value={full_name}
+                onChange={(e) =>setFullname(e.target.value)}
+                />
+                <Input
+                placeholder="enter yourEmail"
+                type="text"
+                value={email}
+                onChange={(e)=>setEmail(e.target.value)}
+                />
+                <Input
+                placeholder="Create Your Password"
+                type="password"
+                value={password}
+                onChange={(e)=>setPassword(e.target.value)}/>
+                <Input
+                placeholder="Re-enter Your Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e)=>setConfirmPassword(e.target.value)}
+                />
+                <Button type="submit">Sign Up</Button>
+            </form>
+            <div className="text-center pt-4">
+                <p className="text-sm text-gray-600">
+                    Already have an account?
+                    <Link to="/login" className="font-semibold px-2 text-indigo-500 hover:text-indigo-700">
+                    Sign In Here</Link>
+                </p>
+            </div>
+        </div>
+    </div>
     </>)
 }
