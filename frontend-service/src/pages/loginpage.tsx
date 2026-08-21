@@ -41,7 +41,7 @@ export default function LoginPage() {
   };
 
   return (
-   <div className="flex bg-white min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+   <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 rounded-xl bg-white shadow-md border border-gray-100 p-4">
             <div className="text-center">
                 <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Create Account</h2>
@@ -66,7 +66,9 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e)=>setPassword(e.target.value)}/>
                
-                <Button type="submit">Sign In</Button>
+                <Button type="submit" loading={loading}>
+                    Sign In
+                </Button>
             </form>
             <div className="text-center pt-4">
                 <p className="text-sm text-gray-600">

@@ -10,7 +10,7 @@ const initialState:AuthState={
 }
 
 export const loginUser=createAsyncThunk<string , LoginCredentials, {rejectValue:string}>(
-    'user/loginUser',
+    'auth/login',
     async(credentials,{rejectWithValue}) =>{
         try{
             const data=await authService.login(credentials);
@@ -25,7 +25,7 @@ export const loginUser=createAsyncThunk<string , LoginCredentials, {rejectValue:
 )
 
 export const registerUser=createAsyncThunk<UserProfile,RegisterCredentials,{rejectValue:string}>(
-    'user/registerUser',
+    'auth/register',
     async(credentials,{rejectWithValue}) =>{
         try {
             return await authService.register(credentials);

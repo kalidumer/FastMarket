@@ -56,7 +56,7 @@ export default function Signup(){
     }
 
     return(<>
-    <div className="flex bg-white min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 rounded-xl bg-white shadow-md border border-gray-100 p-4">
             <div className="text-center">
                 <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Create Account</h2>
@@ -69,14 +69,14 @@ export default function Signup(){
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-8 mx-4">
                 <Input 
-                placeholder="enter your Full Name"
+                placeholder="Enter Your Full Name"
                 type="text"
                 value={full_name}
                 onChange={(e) =>setFullname(e.target.value)}
                 />
                 <Input
-                placeholder="enter yourEmail"
-                type="text"
+                placeholder="Enter Your Email"
+                type="email"
                 value={email}
                 onChange={(e)=>setEmail(e.target.value)}
                 />
@@ -91,7 +91,9 @@ export default function Signup(){
                 value={confirmPassword}
                 onChange={(e)=>setConfirmPassword(e.target.value)}
                 />
-                <Button type="submit">Sign Up</Button>
+                <Button type="submit" loading={loading}>
+                    Sign Up
+                </Button>
             </form>
             <div className="text-center pt-4">
                 <p className="text-sm text-gray-600">
