@@ -1,9 +1,7 @@
-import CButton from "./components/button";
-import Input from "./components/input";
 import Login from "./pages/loginpage";
 import {Routes,Route} from "react-router-dom"
-import Header from "./components/Header"
 import Signup from "./pages/registerpage";
+import Home from "./pages/home";
 
 export default function App() {
   
@@ -16,12 +14,11 @@ export default function App() {
         <Header />
       </main>
       </div> */}
-
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup/>} /> 
+        <Route path="/" element={<Home/>} />
       </Routes>
-    
     </>
   )
 }

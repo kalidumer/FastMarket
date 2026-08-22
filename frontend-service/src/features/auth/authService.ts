@@ -7,8 +7,6 @@ export const authService = {
       email: credentials.email,
       password: credentials.password,
     });
-
-    console.log("Login response:", response.data);
     return response.data;
   },
 
