@@ -1,7 +1,7 @@
 import Login from "./pages/loginpage";
 import {Routes,Route} from "react-router-dom"
 import Signup from "./pages/registerpage";
-import Home from "./pages/home";
+import {Home} from "./pages/home";
 
 export default function App() {
   

@@ -17,5 +17,6 @@ dependencies = [
     "pyjwt>=2.13.0",
     "python-dotenv>=1.2.2",
     "sqlmodel>=0.0.38",
+    "supabase>=2.31.0",
     "uvicorn[standard]>=0.49.0",
 ]
