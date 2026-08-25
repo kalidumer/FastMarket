@@ -16,3 +16,10 @@ export interface Category{
     image:string;
     itemCount:number;
 }
+
+export interface SearchQueryParams{
+    q?:string;
+    category_id?:string;
+    min_price?:number;
+    max_price?:number;
+}

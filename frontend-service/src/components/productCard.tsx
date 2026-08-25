@@ -8,6 +8,21 @@ interface productCardProps{
 }
 
 export const ProductCard:React.FC<productCardProps>=({product,addToCart})=>{
+
+    let displayImage=product.image;
+    try{
+        if(typeof product.image==='string' && product.image.trim().startsWith('[')){
+            const parsed=JSON.parse(product.image)
+            if(Array.isArray(parsed) && parsed.length>0){
+                displayImage=parsed[0]
+            }
+        }
+
+    }
+    catch (e){
+        displayImage=product.image;
+}
+
 return(
     <div className="group relative bg-white dark:bg-gray-800 rounded-2xl border border-gray-400 dark:border-gray-50 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify between">
 <div className="w-full aspect-square overflow-hidden bg-gray-100">

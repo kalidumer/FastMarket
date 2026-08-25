@@ -1,5 +1,6 @@
 import uuid
 import json
+import asyncio
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, File, Form, UploadFile
 from sqlmodel import select, or_
@@ -11,7 +12,8 @@ from app.models.product import Product, Category, ProductUpdate
 from app.core.auth_guard import RoleChecker
 from app.models.user import UserRole, User
 
-# Initialize Supabase Client
+# ========================== CONFIG & INITIALIZATION ==========================
+
 SUPABASE_URL = "https://your-supabase-project.supabase.co"
 SUPABASE_KEY = "your-supabase-service-role-or-anon-key"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -23,21 +25,25 @@ STAFF_ROLE = RoleChecker([UserRole.ADMIN, UserRole.MANAGER])
 router = APIRouter(prefix="/api/products", tags=["E-commerce Product Management"])
 
 
-# Helper function to upload image files to Supabase Storage
+# ========================== SUPABASE HELPER FUNCTIONS ==========================
+
 async def upload_file_to_supabase(file: UploadFile, folder: str) -> str:
+    """Uploads a single file to Supabase Storage asynchronously in a thread executor."""
     try:
-        file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+        file_extension = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
         unique_filename = f"{folder}/{uuid.uuid4()}.{file_extension}"
 
         contents = await file.read()
 
-        supabase.storage.from_(BUCKET_NAME).upload(
-            path=unique_filename,
-            file=contents,
-            file_options={"content-type": file.content_type or "image/jpeg"}
-        )
+        def _upload():
+            supabase.storage.from_(BUCKET_NAME).upload(
+                path=unique_filename,
+                file=contents,
+                file_options={"content-type": file.content_type or "image/jpeg"}
+            )
+            return supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
 
-        public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+        public_url = await asyncio.to_thread(_upload)
         return public_url
 
     except Exception as e:
@@ -47,7 +53,139 @@ async def upload_file_to_supabase(file: UploadFile, folder: str) -> str:
         )
 
 
-# ========================== SEARCH & FETCH ROUTES ==========================
+def extract_storage_path_from_url(public_url: str) -> Optional[str]:
+    """Extracts relative file path inside the bucket from public Supabase URL."""
+    try:
+        marker = f"/object/public/{BUCKET_NAME}/"
+        if marker in public_url:
+            return public_url.split(marker)[1]
+    except Exception:
+        pass
+    return None
+
+
+async def delete_files_from_supabase(image_urls: List[str]) -> None:
+    """Removes one or multiple images from Supabase Storage asynchronously."""
+    paths_to_delete = []
+    
+    for url in image_urls:
+        path = extract_storage_path_from_url(url)
+        if path:
+            paths_to_delete.append(path)
+
+    if not paths_to_delete:
+        return
+
+    try:
+        def _delete():
+            supabase.storage.from_(BUCKET_NAME).remove(paths_to_delete)
+
+        await asyncio.to_thread(_delete)
+    except Exception as e:
+        print(f"Warning: Failed to delete image from storage: {str(e)}")
+
+
+# ========================== CATEGORY MANAGEMENT ROUTES ==========================
+# (MUST BE PLACED BEFORE PARSED DYNAMIC ID ROUTES LIKE /{product_id})
+
+@router.get("/categories", response_model=List[Category])
+async def get_all_categories(session: AsyncSession = Depends(get_session)):
+    """Fetch all product categories sorted by name."""
+    stmt = select(Category).order_by(Category.name.asc())
+    result = await session.execute(stmt)
+    categories = result.scalars().all()
+    return categories
+
+
+@router.post("/categories", response_model=Category, status_code=status.HTTP_201_CREATED)
+async def create_category(
+    name: str = Form(...),
+    itemCount: str = Form("0"),
+    image: UploadFile = File(...),
+    session: AsyncSession = Depends(get_session),
+    current_staff: User = Depends(STAFF_ROLE)
+):
+    stmt = select(Category).where(Category.name == name)
+    existing = await session.execute(stmt)
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A category with this name already exists."
+        )
+
+    if not image.content_type or not image.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a valid image."
+        )
+
+    image_url = await upload_file_to_supabase(image, folder="categories")
+
+    new_category = Category(
+        name=name,
+        image=image_url,
+        itemCount=itemCount
+    )
+
+    session.add(new_category)
+    await session.commit()
+    await session.refresh(new_category)
+
+    return new_category
+
+
+@router.get("/categories/{category_id}", response_model=Category)
+async def get_one_category(
+    category_id: str,
+    session: AsyncSession = Depends(get_session)
+):
+    """Fetch a single category by its ID."""
+    stmt = select(Category).where(Category.id == category_id)
+    result = await session.execute(stmt)
+    category = result.scalar_one_or_none()
+
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found."
+        )
+
+    return category
+
+
+@router.delete("/categories/{category_id}", response_model=Category)
+async def delete_category(
+    category_id: str,
+    session: AsyncSession = Depends(get_session),
+    current_staff: User = Depends(STAFF_ROLE)
+):
+    stmt = select(Category).where(Category.id == category_id)
+    result = await session.execute(stmt)
+    category = result.scalar_one_or_none()
+
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found."
+        )
+
+    product_stmt = select(Product).where(Product.category == category_id)
+    product_check = await session.execute(product_stmt)
+    if product_check.scalars().first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete category containing active products. Reassign or delete products first."
+        )
+
+    if category.image:
+        await delete_files_from_supabase([category.image])
+
+    await session.delete(category)
+    await session.commit()
+    return category
+
+
+# ========================== SEARCH & LIST ROUTES ==========================
 
 @router.get("/search", response_model=List[Product])
 async def search_products(
@@ -95,6 +233,9 @@ async def get_all_product(session: AsyncSession = Depends(get_session)):
     return products
 
 
+# ========================== DYNAMIC PRODUCT PARAMETER ROUTES ==========================
+# (MUST STAY AT THE VERY BOTTOM OF THE ROUTER FILE)
+
 @router.get("/{product_id}", response_model=Product)
 async def get_one_product(
     product_id: str,
@@ -110,8 +251,6 @@ async def get_one_product(
     return product
 
 
-# ========================== PRODUCT CRUD WITH FILE UPLOADS ==========================
-
 @router.post("/", response_model=Product, status_code=status.HTTP_201_CREATED)
 async def create_new_product(
     title: str = Form(...),
@@ -121,18 +260,22 @@ async def create_new_product(
     rating: float = Form(0.0),
     reviewCount: int = Form(0),
     isNew: bool = Form(True),
-    images: List[UploadFile] = File(...),  # Accepts 1 to 3 images
+    images: List[UploadFile] = File(...),
     session: AsyncSession = Depends(get_session),
     current_staff: User = Depends(STAFF_ROLE)
 ):
-    # 1. Enforce max limit of 3 images
+    if not images or len(images) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one image is required."
+        )
+
     if len(images) > 3:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Maximum 3 images allowed for a product."
         )
 
-    # 2. Check if the specified category exists
     stmt = select(Category).where(Category.id == category)
     result = await session.execute(stmt)
     existed_category = result.scalar_one_or_none()
@@ -143,7 +286,6 @@ async def create_new_product(
             detail="There is no wanted category to add the new product"
         )
 
-    # 3. Upload images to Supabase Storage
     uploaded_urls = []
     for img in images:
         if not img.content_type or not img.content_type.startswith("image/"):
@@ -154,11 +296,8 @@ async def create_new_product(
         url = await upload_file_to_supabase(img, folder="products")
         uploaded_urls.append(url)
 
-    # 4. Serialize images list to JSON string (or store as single URL / JSON list depending on your schema)
-    # Storing array of URLs as JSON string to match frontend 'image: string' requirement
     image_str = json.dumps(uploaded_urls) if len(uploaded_urls) > 1 else uploaded_urls[0]
 
-    # 5. Save product to Database
     new_product = Product(
         title=title,
         desc=desc,
@@ -231,47 +370,19 @@ async def delete_product(
             detail="THE PRODUCT WANTED TO BE DELETED DOES NOT EXIST!"
         )
 
+    urls_to_delete: List[str] = []
+    if product.image:
+        try:
+            if product.image.startswith("["):
+                urls_to_delete = json.loads(product.image)
+            else:
+                urls_to_delete = [product.image]
+        except Exception:
+            urls_to_delete = [product.image]
+
+    if urls_to_delete:
+        await delete_files_from_supabase(urls_to_delete)
+
     await session.delete(product)
     await session.commit()
     return product
-
-
-# ========================== CATEGORY MANAGEMENT ROUTES ==========================
-
-@router.post("/categories", response_model=Category, status_code=status.HTTP_201_CREATED)
-async def create_category(
-    name: str = Form(...),
-    itemCount: str = Form("0"),
-    image: UploadFile = File(...),  # Max 1 file required for Category
-    session: AsyncSession = Depends(get_session),
-    current_staff: User = Depends(STAFF_ROLE)
-):
-    # Prevent duplicate category names
-    stmt = select(Category).where(Category.name == name)
-    existing = await session.execute(stmt)
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A category with this name already exists."
-        )
-
-    if not image.content_type or not image.content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be a valid image."
-        )
-
-    # Upload single image to Supabase
-    image_url = await upload_file_to_supabase(image, folder="categories")
-
-    new_category = Category(
-        name=name,
-        image=image_url,
-        itemCount=itemCount
-    )
-
-    session.add(new_category)
-    await session.commit()
-    await session.refresh(new_category)
-
-    return new_category

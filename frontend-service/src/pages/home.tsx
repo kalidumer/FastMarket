@@ -2,82 +2,146 @@ import { Product } from "../types/productType"
 // import { MainLayout } from "../components/mainLayout"
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from "../utils/fakedata"
 import { ProductCard } from "../components/productCard"
+import { useState } from "react"
+import { useGetCategoriesQuery, useSearchProductsQuery } from "../features/product/productRtk"
+import { CategoryCard } from "../components/categoryCard"
 
 export const Home:React.FC=()=>{
 
   const handleAddToCart=(product:Product)=>{
 console.log(`Added ${product.title} to cart`)
   }
+
+  const [searchTerm,setSearchTerm]=useState('')
+  const [selectedCategory,setSelectedCategory]=useState<string | undefined>(undefined)
+
+  const {data:categories,isLoading:isCatLoading}=useGetCategoriesQuery();
+  const {data:products ,isLoading:isProductLoading,isError}=useSearchProductsQuery({
+    q:searchTerm || undefined,
+    category_id:selectedCategory
+  });
+
   return (
-  <div className="space-y-12 pb-12">
-    {/* Hero banner section */}
-    <section>
-      <div className="relative z-10 max-w-2xl space-y-6">
-          <span className="inline-block px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold tracking-wide uppercase text-indigo-200 border border-white/20">
-            Exclusive Deals
-          </span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-            Elevate Your Digital Experience.
-          </h1>
-          <p className="text-indigo-100 text-lg sm:text-xl font-light leading-relaxed">
-            Discover cutting-edge gadgets and premium lifestyle products delivered directly to your doorstep.
-          </p>
-          <div className="pt-2 flex flex-wrap gap-4">
-            <button className="px-6 py-3.5 bg-white text-indigo-900 hover:bg-indigo-50 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
-              Shop Trending Items
-            </button>
+  <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white pb-20">
+      {/* HERO & SEARCH BAR */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 py-16 px-6 text-white text-center rounded-b-[2.5rem] shadow-xl">
+        <h1 className="text-3xl md:text-5xl font-black tracking-tight">Discover Premium Products</h1>
+        <p className="mt-3 text-sm md:text-base text-indigo-100 max-w-xl mx-auto">
+          Shop high quality collections delivered directly to your doorstep.
+        </p>
+
+        {/* Live Search Input */}
+        <div className="mt-8 max-w-xl mx-auto">
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search products by name or description..."
+              className="w-full rounded-2xl bg-white px-5 py-3.5 pl-12 text-sm text-gray-900 placeholder-gray-400 shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+            <svg
+              className="absolute left-4 h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-4 text-xs font-semibold text-gray-400 hover:text-gray-600"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
       </section>
 
-      {/* CATEGORIES SECTION */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-            Shop by Category
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {MOCK_CATEGORIES.map((category) => (
-            <div
-              key={category.id}
-              className="group relative h-48 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow"
-            >
-              <img
-                src={category.image}
-                alt={category.name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-4">
-                <h3 className="text-lg font-bold text-white">{category.name}</h3>
-                <p className="text-xs text-gray-300">{category.itemCount}+ Products</p>
-              </div>
+      <main className="max-w-7xl mx-auto px-6 mt-12 space-y-12">
+        {/* CATEGORIES SECTION */}
+        <section>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-black tracking-tight">Browse Categories</h2>
+              <p className="text-xs text-gray-500">Select a category to filter products</p>
             </div>
-          ))}
-        </div>
-      </section>
+            {selectedCategory && (
+              <button
+                onClick={() => setSelectedCategory(undefined)}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400"
+              >
+                Reset Filter
+              </button>
+            )}
+          </div>
 
-      {/* FEATURED PRODUCTS GRID */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-            Featured Products
-          </h2>
-        </div>
+          {isCatLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-44 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {categories?.map((cat) => (
+                <CategoryCard
+                  key={cat.id}
+                  category={cat}
+                  isSelected={selectedCategory === cat.id}
+                  onClick={() =>
+                    setSelectedCategory(selectedCategory === cat.id ? undefined : cat.id)
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </section>
 
-        {/* Responsive Grid: 1 column on mobile, 2 on tablet, 4 on desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {MOCK_PRODUCTS.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              addToCart={handleAddToCart}
-            />
-          ))}
-        </div>
-      </section>
-  </div>
+        {/* PRODUCTS SECTION */}
+        <section>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-black tracking-tight">
+                {selectedCategory ? 'Filtered Products' : 'All Products'}
+              </h2>
+              <p className="text-xs text-gray-500">
+                {products ? `Showing ${products.length} results` : 'Exploring catalog'}
+              </p>
+            </div>
+          </div>
+
+          {isProductLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="h-80 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+              ))}
+            </div>
+          ) : isError || !products || products.length === 0 ? (
+            <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+              <p className="text-gray-500 dark:text-gray-400 font-semibold">No products found.</p>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory(undefined);
+                }}
+                className="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl"
+              >
+                Reset Search Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} addToCart={handleAddToCart}/>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
   )
 }
 
