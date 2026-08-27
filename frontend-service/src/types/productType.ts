@@ -24,17 +24,28 @@ export interface SearchQueryParams{
     max_price?:number;
 }
 
-export interface ProductInCart{
-    id:string;
-    title:string;
-    price:string;
-    image:string;
+export interface CartItem {
+  id: number;
+  user_id: string;
+  product_id: string;
+  quantity: number;
+  product?: Product;
 }
 
-export interface CartItem{
-    id:number;
-    user_id:string;
-    product_id:string;
-    product?:ProductInCart;  
+export interface CheckoutRequest{
+    cart_items_ids:number[];
+}
+
+export interface CheckoutReponse{
+    status:string;
+    order_id:number;
+    checkout_url:string;
+    txt_ref:string;
+}
+
+export interface VerificationResponse{
+    status:'paid' |'failed'|'pending';
+    message:string;
+    amount?:number;
 }
 
