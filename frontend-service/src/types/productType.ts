@@ -23,3 +23,18 @@ export interface SearchQueryParams{
     min_price?:number;
     max_price?:number;
 }
+
+export interface ProductInCart{
+    id:string;
+    title:string;
+    price:string;
+    image:string;
+}
+
+export interface CartItem{
+    id:number;
+    user_id:string;
+    product_id:string;
+    product?:ProductInCart;  
+}
+
