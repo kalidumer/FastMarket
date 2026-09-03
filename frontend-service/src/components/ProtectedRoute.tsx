@@ -1,13 +1,13 @@
-import {Navigate,Outlet} from 'react-router-dom'
-import{useAppSelector} from '../store/store';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAppSelector } from '../store/store';
 
-export default function ProtectedRoute(){
+export default function ProtectedRoute() {
+  // Extract token specifically from state.auth
+  const token = useAppSelector((state) => state.auth.token);
 
-    const token =useAppSelector((state)=>state.auth)
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
 
-    if(!token){
-        return <Navigate to="/login" replace />
-    }
-
-    return <Outlet />
+  return <Outlet />;
 }

@@ -2,7 +2,8 @@ import Login from "./pages/loginpage";
 import {Routes,Route} from "react-router-dom"
 import Signup from "./pages/registerpage";
 import {Home} from "./pages/home";
-
+import { MainLayout } from "./components/mainLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 export default function App() {
   
   return (
@@ -17,7 +18,12 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup/>} /> 
-        <Route path="/" element={<Home/>} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout/>}>
+            <Route path="/" element={<Home/>} />
+          </Route>
+        </Route>
       </Routes>
     </>
   )

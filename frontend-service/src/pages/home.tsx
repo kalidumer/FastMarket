@@ -6,23 +6,36 @@ import { useState } from "react"
 import { useGetCategoriesQuery, useSearchProductsQuery } from "../features/product/productRtk"
 import { CategoryCard } from "../components/categoryCard"
 
-export const Home:React.FC=()=>{
+// 1. Import the RTK Query mutation hook
+import { useAddToCartMutation } from "../features/product/orderapi"
 
-  const handleAddToCart=(product:Product)=>{
-console.log(`Added ${product.title} to cart`)
-  }
+export const Home: React.FC = () => {
+  // 2. Initialize the mutation hook
+  const [addToCart] = useAddToCartMutation()
 
-  const [searchTerm,setSearchTerm]=useState('')
-  const [selectedCategory,setSelectedCategory]=useState<string | undefined>(undefined)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined)
 
-  const {data:categories,isLoading:isCatLoading}=useGetCategoriesQuery();
-  const {data:products ,isLoading:isProductLoading,isError}=useSearchProductsQuery({
-    q:searchTerm || undefined,
-    category_id:selectedCategory
+  const { data: categories, isLoading: isCatLoading } = useGetCategoriesQuery();
+  const { data: products, isLoading: isProductLoading, isError } = useSearchProductsQuery({
+    q: searchTerm || undefined,
+    category_id: selectedCategory
   });
 
+  // 3. Connect backend dispatch to trigger immediate tag invalidation
+  const handleAddToCart = async (product: Product) => {
+    try {
+      await addToCart({
+        product_id: product.id,
+        quantity: 1,
+      }).unwrap();
+    } catch (error) {
+      console.error("Failed to add product to cart:", error);
+    }
+  }
+
   return (
-  <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white pb-20">
       {/* HERO & SEARCH BAR */}
       <section className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 py-16 px-6 text-white text-center rounded-b-[2.5rem] shadow-xl">
         <h1 className="text-3xl md:text-5xl font-black tracking-tight">Discover Premium Products</h1>
@@ -135,7 +148,11 @@ console.log(`Added ${product.title} to cart`)
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} addToCart={handleAddToCart}/>
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  addToCart={handleAddToCart}
+                />
               ))}
             </div>
           )}
@@ -144,4 +161,3 @@ console.log(`Added ${product.title} to cart`)
     </div>
   )
 }
-
