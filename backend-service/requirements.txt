@@ -2,6 +2,7 @@ fastapi[standard]
 uvicorn[standard]
 asyncpg
 bcrypt
+greenlet
 google-genai
 google-generativeai
 httpx
@@ -11,5 +12,6 @@ pydantic-settings
 pyjwt
 pytest
 python-dotenv
+sqlalchemy
 sqlmodel
 supabase
