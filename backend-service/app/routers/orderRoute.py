@@ -353,8 +353,9 @@ async def dynamic_ai_upsell(
         ref_product = ref_prod_res.scalar_one_or_none()
         
         if ref_product:
+            
             recommend_stmt = select(Product).where(
-                Product.category_id == ref_product.category_id,
+                Product.category == ref_product.category,
                 Product.id != ref_product.id,
                 Product.inventory_count > 0
             ).limit(3)

@@ -43,12 +43,12 @@ async def register_user(payload: UserRegister, session: AsyncSession = Depends(g
 
 @router.post("/auth/login", response_model=TokenResponse)
 async def login(payload: UserLogin, session: AsyncSession = Depends(get_session)):
-    # FIX: Removed await from select()
+  
     stmt = select(User).where(User.email == payload.email)
     result = await session.execute(stmt)
     user = result.scalar_one_or_none()
     
-    # FIX: Fixed function name to verify_passwords and separated args cleanly. Also fixed 'detail' key typo.
+  
     if not user or not verify_passwords(payload.password, user.hash_password):
         raise HTTPException(status_code=401, detail="Email or password are Incorrect, Invalid credentials")
     
@@ -59,7 +59,7 @@ async def login(payload: UserLogin, session: AsyncSession = Depends(get_session)
     
     return {
         "access_token": token,
-        "token_type": "bearer", # FIX: Fixed typo "brearer"
+        "token_type": "bearer",
         "role": user.role,
         "full_name": user.full_name
     }
