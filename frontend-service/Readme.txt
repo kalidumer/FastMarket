@@ -1,47 +1,47 @@
-frontend-service/
-├── src/
-│   ├── assets/              # Logos, default placeholder icons, payment badges
-│   ├── components/          # Reusable UI elements (Button, Input, Navbar, Footer)
-│   ├── config/              # Central configuration constants
-│   │   └── constants.ts     # Gateway Base URL and payment endpoint constants
-│   ├── features/            # Isolated core business domains
-│   │   ├── auth/
-│   │   │   ├── components/  # LoginForm, SignupForm
-│   │   │   ├── authSlice.ts # Authentication global state
-│   │   │   └── authService.ts
-│   │   ├── catalog/         # Product discovery & details listing
-│   │   │   ├── components/  # ProductCard, ProductGrid, FilterSidebar
-│   │   │   ├── catalogSlice.ts
-│   │   │   └── catalogService.ts
-│   │   ├── cart/            # Client side persistence & cart calculations
-│   │   │   ├── components/  # CartDrawer, CartItemRow
-│   │   │   └── cartSlice.ts # Handles local state (Redux Toolkit)
-│   │   └── checkout/        # Payment gateway interactions & handshakes
-│   │       ├── components/  # OrderSummary, CheckoutForm
-│   │       ├── checkoutSlice.ts
-│   │       └── checkoutService.ts # Chapa initiation API calls
-│   ├── layouts/             # Root structural layouts (e.g., MarketLayout, AuthLayout)
-│   ├── pages/               # Clean route targets aggregating specific features
-│   │   ├── home/
-│   │   │   └── index.tsx    # Customer landing experience
-│   │   ├── product-detail/
-│   │   │   └── index.tsx    # Single product views
-│   │   ├── login/
-│   │   │   └── index.tsx
-│   │   ├── cart-page/
-│   │   │   └── index.tsx
-│   │   └── payment-status/  # Landing pad for Chapa callback redirect status hooks
-│   │       ├── Success.tsx
-│   │       └── Verify.tsx
-│   ├── store/               # Redux Central Configuration Hub
-│   │   └── store.ts         # Integrates: auth, catalog, cart, and checkout reducers
-│   ├── utils/               # App-wide utility blocks
-│   │   └── api.ts           # Axios base instance featuring interceptors
-│   ├── App.tsx              # Router composition core mapping
-│   ├── main.tsx             # Mounting layout wrapped with Redux Provider
-│   └── index.css
-├── tsconfig.json
-├── tsconfig.app.json
-├── tsconfig.node.json
-├── vite.config.ts
-└── package.json
+# FastMarket - Full-Stack E-Commerce Platform
+
+FastMarket is a high-performance, responsive full-stack e-commerce application built with a modern decoupled architecture. It features a **FastAPI** backend with asynchronous database interactions, a **React + TypeScript** single-page application frontend powered by **Redux Toolkit & RTK Query**, and an automated testing suite for both backend and frontend layers.
+
+---
+
+## Tech Stack & Architecture
+
+### **Frontend**
+* **Framework:** React 18 with TypeScript & Vite
+* **State Management:** Redux Toolkit & RTK Query (Caching & Async Mutations)
+* **Routing:** React Router v6 (Protected Routes & Nested Layouts)
+* **Styling:** Tailwind CSS (Responsive Design & Dynamic Dark Mode)
+* **Testing:** Vitest + React Testing Library + JSDOM
+
+### **Backend**
+* **Framework:** FastAPI (Python 3.11)
+* **Database & ORM:** PostgreSQL + SQLAlchemy / Tortoise ORM
+* **Authentication:** JWT (JSON Web Tokens) with Passlib/Bcrypt password hashing
+* **Testing:** Pytest + HTTPX / TestClient
+
+---
+
+## Repository Structure
+
+```text
+FastMarket/
+├── backend-service/
+│   ├── app/
+│   │   ├── api/             # Auth, Product, and Cart API endpoints
+│   │   ├── core/            # Config, Security, and JWT utilities
+│   │   ├── models/          # Database ORM models
+│   │   └── main.py          # FastAPI application entry point
+│   ├── test/
+│   │   ├── __init__.py
+│   │   └── test_api.py      # Pytest backend API integration tests
+│   └── conftest.py          # Pytest fixtures and test setup
+│
+├── frontend-service/
+│   ├── src/
+│   │   ├── components/      # UI components (ProductCard, Navbar, MainLayout)
+│   │   ├── pages/           # Route views (Home, Login, Cart)
+│   │   ├── store/           # Redux store & RTK Query API slices
+│   │   └── test/            # Vitest setup & component tests
+│   └── vite.config.ts       # Vite & Vitest configuration
+│
+└── README.md
